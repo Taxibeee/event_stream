@@ -1,6 +1,10 @@
 import time
 import requests
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Constants for the Bolt API
 TOKEN_URL = os.getenv('BOLT_TOKEN_URL')

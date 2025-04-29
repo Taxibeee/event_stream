@@ -1,27 +1,26 @@
+import os
+from dotenv import load_dotenv
+from bolt_api.token_manager import BoltTokenManager
 from kafka import KafkaProducer
 import json
-import os
+# Load environment variables from .env file
+load_dotenv()
 
-class KafkaOrderProducer:
-    def __init__(self):
-        self.producer = KafkaProducer(
-            bootstrap_servers=os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092'),
-            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-            client_id='taxibee-order-producer'
-        )
-        self.topic = os.getenv('KAFKA_ORDERS_TOPIC', 'orders')
+token_manager = BoltTokenManager(os.getenv('BOLT_TOKEN_URL'), os.getenv('BOLT_CLIENT_ID'), os.getenv('BOLT_CLIENT_SECRET'))
+print(token_manager.get_access_token())
 
-    def send_order(self, order_data):
-        try:
-            # Send the message
-            future = self.producer.send(self.topic, value=order_data)
-            
-            # Wait for the message to be sent
-            future.get(timeout=10)
-            print(f'Message delivered to {self.topic}')
-            
-        except Exception as e:
-            print(f"Error sending order to Kafka: {e}")
+order_data = {
+    'order_id': '124',
+    'order_amount': 100,
+    'order_currency': 'USD',
+    'order_status': 'completed'
+}
 
-    def __del__(self):
-        self.producer.close() 
+producer = KafkaProducer(
+    bootstrap_servers=os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092'),
+    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+    client_id='taxibee-order-producer'  
+)
+
+producer.send(os.getenv('KAFKA_ORDERS_TOPIC', 'orders'), value=order_data)
+producer.flush()
